@@ -114,8 +114,8 @@ str(MonthlyData)
 ##~~~~~~~~~~~~~~~~~~~~~~~
 ##  ~ Ramet~Height  ----
 ##~~~~~~~~~~~~~~~~~~~~~~
-#RametGlmer <- glmer(Ramet~MeanHeight.scale*Diversity+(1|Composition),MonthlyData,family=poisson)#
-RametLmer <- lmer(LogRamet~LogHeight*Diversity+(1|Composition),MonthlyData)#,family=poisson
+
+RametLmer <- lmer(LogRamet~LogHeight*Diversity+(1|Composition),MonthlyData)
 summary(RametLmer)
 anova(RametLmer)
 
@@ -168,6 +168,8 @@ Plot.RametLmer.Result<-Plot.RametLmer.Result+labs(x ="")+labs(y ="Effect size")+
 Plot.RametLmer.Result<-Plot.RametLmer.Result+coord_flip()#+
 Plot.RametLmer.Result
 
+common_legend_theme <- theme(legend.position = "bottom", legend.box = "horizontal", legend.margin = margin(2, 0, 2, 0, unit = "pt"), legend.key.width = unit(10, "pt"), legend.key.height = unit(10, "pt"), legend.text = element_text(size = 8), legend.title = element_text(size = 8))
+
 
 #new data
 new_LogHeight <- expand.grid(
@@ -189,10 +191,7 @@ predict.RametLmer <-cbind(new_LogHeight,pred_RametLmer,lb_RametLmer,ub_RametLmer
 
 
 
-#brewer.pal(9, "Greens")
-#SpeciesCol_palette <- brewer.pal(9, "Greens")
-#SpeciesCol_palette%>%show_col
-#SpeciesCol<-  SpeciesCol_palette[c(4,6,7,9)]
+
 SpeciesCol%>%show_col
 
 SpeciesCol <- brewer.pal(7, "BuPu")[c(3,4,5,6)]
@@ -200,6 +199,13 @@ SpeciesCol <- brewer.pal(7, "BuPu")[c(3,4,5,6)]
 SpeciesCol%>%show_col
 
 fig.log.RametLmer <- ggplot(predict.RametLmer)+
+  geom_point(
+    data = MonthlyData,
+    aes(x = LogHeight, y = LogRamet, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.1),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=LogHeight,y=pred_RametLmer,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=LogHeight,ymin=lb_RametLmer,ymax=ub_RametLmer,fill=as.factor(Diversity)),alpha=0.3)+
   xlab('Ln(Height (cm)) ')+
@@ -211,12 +217,18 @@ fig.log.RametLmer <- ggplot(predict.RametLmer)+
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)  + 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  theme(legend.position = c(0.8,0.25),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
+  common_legend_theme
 fig.log.RametLmer
 
 
-
 fig.RametLmer <- ggplot(predict.RametLmer)+
+  geom_point(
+    data = MonthlyData,
+    aes(x = MeanHeight, y = Ramet, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.5),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=MeanHeight,y=Ramet,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=MeanHeight,ymin=lb_Ramet,ymax=ub_Ramet,fill=as.factor(Diversity)),alpha=0.2)+
   xlab('Height (cm)')+
@@ -228,8 +240,7 @@ fig.RametLmer <- ggplot(predict.RametLmer)+
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)  + 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  #scale_linetype_discrete(name = "Treatment")+
-  theme(legend.position = c(0.8,0.25),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
+  common_legend_theme
 fig.RametLmer
 
 
@@ -246,7 +257,7 @@ summary(InflorescenceLmer)
 
 InflorescenceLmer.coefs <- fixef(InflorescenceLmer)
 InflorescenceLmer.Slope <- InflorescenceLmer.coefs["LogHeight"]
-InflorescenceLmer.Intercept <- exp(InflorescenceLmer.coefs["(Intercept)"])
+InflorescenceLmer.Intercept <- exp(InflorescenceLmer.coefs["(Intercept)"]) - 1
 cat("InflorescenceLmer.Slope =", InflorescenceLmer.Slope, "\n")
 cat("InflorescenceLmer.Intercept =", InflorescenceLmer.Intercept, "\n")
 
@@ -271,7 +282,7 @@ InflorescenceLmer.Result$Variable <- factor(InflorescenceLmer.Result$Variable,le
 #plot effect size
 Plot.InflorescenceLmer.Result <- ggplot(data=InflorescenceLmer.Result,aes(Variable, Estimate, col=Colour)) +
   geom_errorbar(data=InflorescenceLmer.Result, mapping=aes(ymin=lower, ymax=upper), width=0, size=1) +
-  geom_point(size=2, shape=19)+##0433ff
+  geom_point(size=2, shape=19)+
   geom_hline(aes(yintercept=0), colour="gray", linetype="dashed")+
   theme_bw()+
   scale_colour_manual(name = NULL, values = c('gray','#0433ff'))  + 
@@ -289,7 +300,7 @@ Plot.InflorescenceLmer.Result<-Plot.InflorescenceLmer.Result+labs(x ="")+labs(y 
   labs(title = "Ln(Inflorescence)")+ 
   theme(plot.title = element_text(size = 9,hjust = 0.5, face = "bold"))
 
-Plot.InflorescenceLmer.Result<-Plot.InflorescenceLmer.Result+coord_flip()#+
+Plot.InflorescenceLmer.Result<-Plot.InflorescenceLmer.Result+coord_flip()
 Plot.InflorescenceLmer.Result
 
 
@@ -310,6 +321,13 @@ predict.InflorescenceLmer <-cbind(new_LogHeight,pred_InflorescenceLmer,lb_Inflor
 
 
 fig.log.InflorescenceLmer <- ggplot(predict.InflorescenceLmer)+
+  geom_point(
+    data = MonthlyData,
+    aes(x = LogHeight, y = LogInflorescence, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.1),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=LogHeight,y=pred_InflorescenceLmer,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=LogHeight,ymin=lb_InflorescenceLmer,ymax=ub_InflorescenceLmer,fill=as.factor(Diversity)),alpha=0.2)+
   xlab('Ln(Height (cm)) ')+
@@ -321,11 +339,18 @@ fig.log.InflorescenceLmer <- ggplot(predict.InflorescenceLmer)+
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)  + 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  theme(legend.position = c(0.8,0.25),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
+  common_legend_theme
 fig.log.InflorescenceLmer
 
-
+names(MonthlyData)
 fig.InflorescenceLmer <- ggplot(predict.InflorescenceLmer)+
+  geom_point(
+    data = MonthlyData,
+    aes(x = MeanHeight, y = Inflorescence, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.5),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=MeanHeight,y=Inflorescence,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=MeanHeight,ymin=lb_Inflorescence,ymax=ub_Inflorescence,fill=as.factor(Diversity)),alpha=0.2)+
   xlab('Height (cm)')+
@@ -337,7 +362,7 @@ fig.InflorescenceLmer <- ggplot(predict.InflorescenceLmer)+
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)+ 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  theme(legend.position = c(0.2,0.7),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
+  common_legend_theme
 fig.InflorescenceLmer
 
 
@@ -351,7 +376,7 @@ summary(InflorescenceLmer.Ramet)
 
 InflorescenceLmer.Ramet.coefs <- fixef(InflorescenceLmer.Ramet)
 InflorescenceLmer.Ramet.Slope <- InflorescenceLmer.Ramet.coefs["LogRamet"]
-InflorescenceLmer.Ramet.Intercept <- exp(InflorescenceLmer.Ramet.coefs["(Intercept)"])
+InflorescenceLmer.Ramet.Intercept <- exp(InflorescenceLmer.Ramet.coefs["(Intercept)"]) - 1
 cat("InflorescenceLmer.Ramet.Slope =", InflorescenceLmer.Ramet.Slope, "\n")
 cat("InflorescenceLmer.Ramet.Intercept =", InflorescenceLmer.Ramet.Intercept, "\n")
 
@@ -369,7 +394,6 @@ InflorescenceLmer.Ramet.Result <- InflorescenceLmer.Ramet.Result %>%
   mutate(Y='Inflorescence~Ramet')%>%
   mutate(Colour = ifelse(lower > 0 & upper > 0, 1,
                          ifelse(lower < 0 & upper < 0, -1, 0)))%>%
-  #mutate(Variable = plyr::mapvalues(Variable, c("LogRamet","I(LogRamet^2)" ,"Diversity","LogRamet:Diversity","I(LogRamet^2):Diversity"), c("Ln(Ramet)","Ln(Ramet)2","Diversity","Ln(Ramet) × Diversity","xLn(Ramet)2 × Diversity")))%>%
   mutate(Variable = plyr::mapvalues(Variable, c("LogRamet","Diversity","LogRamet:Diversity"), c("Ln(Ramet)","Diversity","Ln(Ramet) × Diversity")))%>%
   mutate(Colour=as.factor(Colour))
 InflorescenceLmer.Ramet.Result$Variable <- factor(InflorescenceLmer.Ramet.Result$Variable,levels=c('Ln(Ramet) × Diversity','Diversity','Ln(Ramet)'))
@@ -378,13 +402,13 @@ InflorescenceLmer.Ramet.Result$Variable <- factor(InflorescenceLmer.Ramet.Result
 #plot effect size
 Plot.InflorescenceLmer.Ramet.Result <- ggplot(data=InflorescenceLmer.Ramet.Result,aes(Variable, Estimate, col=Colour)) +
   geom_errorbar(data=InflorescenceLmer.Ramet.Result, mapping=aes(ymin=lower, ymax=upper), width=0, size=1) +
-  geom_point(size=2, shape=19)+##0433ff
+  geom_point(size=2, shape=19)+
   geom_hline(aes(yintercept=0), colour="gray", linetype="dashed")+
   theme_bw()+
   scale_colour_manual(name = NULL, values = c('#199b26','gray','#0433ff'))  + 
   scale_fill_manual(name = NULL, values = c('#199b26','gray','#0433ff'))
 
-Plot.InflorescenceLmer.Ramet.Result<-Plot.InflorescenceLmer.Ramet.Result+labs(x ="")+labs(y ="Effect size")+#
+Plot.InflorescenceLmer.Ramet.Result<-Plot.InflorescenceLmer.Ramet.Result+labs(x ="")+labs(y ="Effect size")+
   theme(axis.title.x =element_text( size=9, colour="black"),
         axis.title.y=element_text(size=9, colour="black"))+
   theme(axis.text.x =element_text(size=8, colour="black"),
@@ -423,6 +447,13 @@ predict.InflorescenceLmer.Ramet <-cbind(new_LogRamet,pred_InflorescenceLmer.Rame
 
 
 fig.log.InflorescenceLmer.Ramet <- ggplot(predict.InflorescenceLmer.Ramet)+
+  geom_point(
+    data = MonthlyData,
+    aes(x = LogRamet, y = LogInflorescence, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.1), 
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=LogRamet,y=pred_InflorescenceLmer.Ramet,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=LogRamet,ymin=lb_InflorescenceLmer.Ramet,ymax=ub_InflorescenceLmer.Ramet,fill=as.factor(Diversity)),alpha=0.2)+
   xlab('Ln(Ramet) ')+
@@ -434,11 +465,19 @@ fig.log.InflorescenceLmer.Ramet <- ggplot(predict.InflorescenceLmer.Ramet)+
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)  + 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  theme(legend.position = c(0.2,0.7),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
+  common_legend_theme
 
 fig.log.InflorescenceLmer.Ramet
 
+
 fig.InflorescenceLmer.Ramet <- ggplot(predict.InflorescenceLmer.Ramet)+
+  geom_point(
+    data = MonthlyData,
+    aes(x = Ramet, y = Inflorescence, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.5),  
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=Ramet,y=Inflorescence,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=Ramet,ymin=lb_Inflorescence,ymax=ub_Inflorescence,fill=as.factor(Diversity)),alpha=0.2)+
   xlab('Ramet')+
@@ -450,17 +489,20 @@ fig.InflorescenceLmer.Ramet <- ggplot(predict.InflorescenceLmer.Ramet)+
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)  + 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  theme(legend.position = c(0.2,0.7),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
+  common_legend_theme
 
 fig.InflorescenceLmer.Ramet
 
 ##~~~~~~~~~~~~~~~~~~~~~~
 ##  ~ combine plot  ----
 ##~~~~~~~~~~~~~~~~~~~~~~
+fig.allometry <- ggpubr::ggarrange(ggpubr::ggarrange(Plot.RametLmer.Result, fig.log.RametLmer + theme(legend.position="none"), fig.RametLmer + theme(legend.position="none"), Plot.InflorescenceLmer.Result, fig.log.InflorescenceLmer + theme(legend.position="none"), fig.InflorescenceLmer + theme(legend.position="none"), Plot.InflorescenceLmer.Ramet.Result, fig.log.InflorescenceLmer.Ramet + theme(legend.position="none"), fig.InflorescenceLmer.Ramet + theme(legend.position="none"), ncol=3, nrow=3, labels=c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'), font.label=list(size=10, color="black", face="bold"), widths=c(1.1,0.9,0.9), common.legend=FALSE), cowplot::get_legend(fig.log.RametLmer + guides(colour=guide_legend(nrow=1, ncol=4, byrow=TRUE), fill=guide_legend(nrow=1, ncol=4, byrow=TRUE)) + theme(legend.position="bottom", legend.box="horizontal", legend.margin=margin(2,0,2,0,"pt"), legend.key.width=unit(10,"pt"), legend.key.height=unit(10,"pt"), legend.text=element_text(size=8), legend.title=element_text(size=8))), ncol=1, heights=c(1,0.08))
 
-fig.allometry <- ggpubr::ggarrange(Plot.RametLmer.Result,fig.log.RametLmer,fig.RametLmer,Plot.InflorescenceLmer.Result,fig.log.InflorescenceLmer,fig.InflorescenceLmer,Plot.InflorescenceLmer.Ramet.Result,fig.log.InflorescenceLmer.Ramet,fig.InflorescenceLmer.Ramet,ncol = 3,nrow=3,labels=c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)', '(g)', '(h)', '(i)'),font.label = list(size = 10, color = "black", face = "bold"), widths = c(1.1, 0.9,0.9))
-fig.allometry#Figure 3
-#ggsave('Result/fig.allometry.pdf',width = 18,height =15,units = c('cm'))
+
+
+fig.allometry <- ggpubr::ggarrange(Plot.RametLmer.Result,fig.log.RametLmer,fig.RametLmer,Plot.InflorescenceLmer.Result,fig.log.InflorescenceLmer,fig.InflorescenceLmer,Plot.InflorescenceLmer.Ramet.Result,fig.log.InflorescenceLmer.Ramet,fig.InflorescenceLmer.Ramet,ncol = 3,nrow=3,labels=c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)', '(g)', '(h)', '(i)'),font.label = list(size = 10, color = "black", face = "bold"), widths = c(1.1, 0.9,0.9),common.legend = TRUE,legend = "bottom")
+fig.allometry#Figure 4
+#ggsave('Result/fig.allometry20250916.pdf',width = 18,height =17,units = c('cm'))
 
 
 
@@ -705,6 +747,7 @@ PeakRamet <- MonthlyData %>%
   group_by(Plot) %>%
   filter(Ramet == max(Ramet)) %>%
   slice_min(order_by = Day, n = 1)
+names(PeakRamet)
 
 summary(PeakRamet)
 
@@ -783,9 +826,8 @@ summary(PeakRamet)
 
 ####plot together####
 
-
+names(PeakMeanHeight)
 fig.PeakDayLmer <- ggplot() +
-  
   # Peak Mean Height
   geom_point(data = summary_PeakMeanHeight, aes(x = Diversity, y = meanDay, color = "Peak height day"), size = 2) +  
   geom_errorbar(data = summary_PeakMeanHeight, aes(x = Diversity, ymin = lowerDay, ymax = upperDay, color = "Peak height day"), width = 0.2) +
@@ -817,7 +859,7 @@ fig.PeakDayLmer <- ggplot() +
   scale_x_continuous(breaks = c(1, 2, 4, 8)) +
 
 
-  theme(legend.position = c(0.4, 0.6), 
+  theme(legend.position = 'bottom', 
         legend.justification = "center",
         legend.title = element_text(size = 9), 
         legend.text = element_text(size = 9))  
@@ -867,7 +909,7 @@ Plot.AllModels.EffectSize <- ggplot(data = AllModels.Results, aes(x = Model, y =
   geom_hline(aes(yintercept = 0), colour = "gray", linetype = "dashed") + 
   theme_bw() +
   labs(x = "", y = "Effect size (genotypic diversity)") +
-  labs(title = "Effect of genotypic diversity on the days\nof peak height, ramet and inflorescence") + 
+  #labs(title = "Effect of genotypic diversity on the days\nof peak height, ramet and inflorescence") + 
   theme(axis.title.x = element_text(size = 9, colour = "black"),
         axis.title.y = element_text(size = 9, colour = "black"),
         axis.text.x = element_text(size = 9, colour = "black"),
@@ -877,17 +919,18 @@ Plot.AllModels.EffectSize <- ggplot(data = AllModels.Results, aes(x = Model, y =
   scale_color_manual(name = "Legend", values = c("Peak inflorescence day" = "#E69F00", 
                                                     "Peak height day" = "#009E73", 
                                                     "Peak ramet day" = "#0072B2")) +
-  coord_flip()
+  coord_flip()+
+  theme(legend.position = "none")
 
 Plot.AllModels.EffectSize
 
 
 
 ####combine days figure####
-fig.peakDay.effectSize <- ggpubr::ggarrange(fig.PeakDayLmer,Plot.AllModels.EffectSize,ncol = 2,nrow=1,labels=c('(a)', '(b)'),font.label = list(size = 10, color = "black", face = "bold"), widths = c(0.8, 1))
-fig.peakDay.effectSize#Figure 2
+fig.peakDay.effectSize <- ggpubr::ggarrange(fig.PeakDayLmer,Plot.AllModels.EffectSize,ncol = 2,nrow=1,labels=c('(a)', '(b)'),font.label = list(size = 10, color = "black", face = "bold"), widths = c(0.8, 1),common.legend = TRUE, legend = "bottom")
+fig.peakDay.effectSize#Figure 3
 
-
+#ggsave('Result/fig.peakDay.effectSize20250915.pdf', width =18, height =10, units = 'cm')
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -975,8 +1018,13 @@ predict.TotalAbove.TotalBelow.Lmer <-cbind(new_LogTotalBelowBiomass,pred_TotalAb
 
 
 fig.log.TotalAbove.TotalBelow.Lmer <- ggplot(predict.TotalAbove.TotalBelow.Lmer)+
-  #facet_grid(~Treatment) +
-  #geom_point(data=MonthlyData,aes(x=LogHeight,y=LogRamet,col=as.factor(Diversity)),size=1,alpha=0.5)+
+  geom_point(
+    data = DataFinal,
+    aes(x = LogTotalBelowBiomass, y = LogTotalAboveBiomass, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.1),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=LogTotalBelowBiomass,y=pred_TotalAbove.TotalBelow.Lmer,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=LogTotalBelowBiomass,ymin=lb_TotalAbove.TotalBelow.Lmer,ymax=ub_TotalAbove.TotalBelow.Lmer,fill=as.factor(Diversity)),alpha=0.3)+
   ylab('Ln(Aboveground biomass (g)) ')+
@@ -995,6 +1043,13 @@ fig.log.TotalAbove.TotalBelow.Lmer
 
 
 fig.TotalAbove.TotalBelow.Lmer <- ggplot(predict.TotalAbove.TotalBelow.Lmer)+
+  geom_point(
+    data = DataFinal,
+    aes(x = TotalBelowBiomass, y = TotalAboveBiomass, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.5),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=TotalBelowBiomass,y=TotalAboveBiomass,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=TotalBelowBiomass,ymin=lb_TotalAboveBiomass,ymax=ub_TotalAboveBiomass,fill=as.factor(Diversity)),alpha=0.2)+
   ylab('Aboveground biomass (g)')+
@@ -1006,7 +1061,6 @@ fig.TotalAbove.TotalBelow.Lmer <- ggplot(predict.TotalAbove.TotalBelow.Lmer)+
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)  + 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  #scale_linetype_discrete(name = "Treatment")+
   theme(legend.position = c(0.8,0.25),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
 
 fig.TotalAbove.TotalBelow.Lmer
@@ -1085,6 +1139,13 @@ predict.Reproductive.Vegetative.Lmer <-cbind(new_LogVegetativeBiomass,pred_Repro
 
 
 fig.log.Reproductive.Vegetative.Lmer <- ggplot(predict.Reproductive.Vegetative.Lmer)+
+  geom_point(
+    data = DataFinal,
+    aes(x = LogVegetativeBiomass, y = LogReproductiveBiomass, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.1),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=LogVegetativeBiomass,y=pred_Reproductive.Vegetative.Lmer,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=LogVegetativeBiomass,ymin=lb_Reproductive.Vegetative.Lmer,ymax=ub_Reproductive.Vegetative.Lmer,fill=as.factor(Diversity)),alpha=0.3)+
   ylab('Ln(Reproductive biomass (g)) ')+
@@ -1103,6 +1164,13 @@ fig.log.Reproductive.Vegetative.Lmer
 
 
 fig.Reproductive.Vegetative.Lmer <- ggplot(predict.Reproductive.Vegetative.Lmer)+
+  geom_point(
+    data = DataFinal,
+    aes(x = VegetativeBiomass, y = ReproductiveBiomass, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.5),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=VegetativeBiomass,y=ReproductiveBiomass,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=VegetativeBiomass,ymin=lb_ReproductiveBiomass,ymax=ub_ReproductiveBiomass,fill=as.factor(Diversity)),alpha=0.2)+
   ylab('Reproductive biomass (g)')+
@@ -1114,7 +1182,6 @@ fig.Reproductive.Vegetative.Lmer <- ggplot(predict.Reproductive.Vegetative.Lmer)
   scale_colour_manual(name = 'Diversity', values = SpeciesCol)  + 
   scale_fill_manual(name = 'Diversity', values = SpeciesCol)+
   theme(legend.background = element_blank())+
-  #scale_linetype_discrete(name = "Treatment")+
   theme(legend.position = c(0.8,0.25),legend.box = 'horizontal',legend.key.size = unit(0.5,'cm'),legend.box.spacing = unit(0.4,'cm'),legend.key.height = unit(0.3,'cm'),legend.box.margin = margin(0,0,0,0,'cm'),legend.box.just = 'bottom',legend.box.background = element_blank(),legend.spacing = unit(0,'cm'), legend.title = element_text(size=8),legend.text = element_text(size=8))
 fig.Reproductive.Vegetative.Lmer
 
@@ -1195,8 +1262,13 @@ predict.Inflorescence.Asexual.Lmer <-cbind(new_LogAsexualBiomass,pred_Infloresce
 
 
 fig.log.Inflorescence.Asexual.Lmer <- ggplot(predict.Inflorescence.Asexual.Lmer)+
-  #facet_grid(~Treatment) +
-  #geom_point(data=MonthlyData,aes(x=LogHeight,y=LogRamet,col=as.factor(Diversity)),size=1,alpha=0.5)+
+  geom_point(
+    data = DataFinal,
+    aes(x = LogAsexualBiomass, y = LogInflorescenceBiomass, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.1),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=LogAsexualBiomass,y=pred_Inflorescence.Asexual.Lmer,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=LogAsexualBiomass,ymin=lb_Inflorescence.Asexual.Lmer,ymax=ub_Inflorescence.Asexual.Lmer,fill=as.factor(Diversity)),alpha=0.3)+
   ylab('Ln(Inflorescence biomass (g)) ')+
@@ -1215,6 +1287,13 @@ fig.log.Inflorescence.Asexual.Lmer
 
 
 fig.Inflorescence.Asexual.Lmer <- ggplot(predict.Inflorescence.Asexual.Lmer)+
+  geom_point(
+    data = DataFinal,
+    aes(x = AsexualBiomass, y = InflorescenceBiomass, col = as.factor(Diversity)),
+    alpha = 0.3, size = 0.5,
+    position = position_jitter(width = 0, height = 0.5),
+    inherit.aes = FALSE
+  ) +
   geom_line(aes(x=AsexualBiomass,y=InflorescenceBiomass,col=as.factor(Diversity)),size=1)+
   geom_ribbon(aes(x=AsexualBiomass,ymin=lb_InflorescenceBiomass,ymax=ub_InflorescenceBiomass,fill=as.factor(Diversity)),alpha=0.2)+
   ylab('Inflorescence biomass (g)')+
@@ -1237,10 +1316,11 @@ fig.Inflorescence.Asexual.Lmer
 ##  ~ combine plot  ----
 ##~~~~~~~~~~~~~~~~~~~~~~
 
-fig.allometry.TotalBiomass <- ggpubr::ggarrange(Plot.TotalAbove.TotalBelow.Lmer.Result,fig.log.TotalAbove.TotalBelow.Lmer,fig.TotalAbove.TotalBelow.Lmer,Plot.Reproductive.Vegetative.Lmer.Result,fig.log.Reproductive.Vegetative.Lmer,fig.Reproductive.Vegetative.Lmer,Plot.Inflorescence.Asexual.Lmer.Result,fig.log.Inflorescence.Asexual.Lmer,fig.Inflorescence.Asexual.Lmer,ncol = 3,nrow=3,labels=c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)', '(g)', '(h)', '(i)'),font.label = list(size = 10, color = "black", face = "bold"), widths = c(1.6, 0.9,0.9))
-fig.allometry.TotalBiomass#Figure S6
+fig.allometry.TotalBiomass <- ggpubr::ggarrange(ggpubr::ggarrange(Plot.TotalAbove.TotalBelow.Lmer.Result, fig.log.TotalAbove.TotalBelow.Lmer + theme(legend.position="none"), fig.TotalAbove.TotalBelow.Lmer + theme(legend.position="none"), Plot.Reproductive.Vegetative.Lmer.Result, fig.log.Reproductive.Vegetative.Lmer + theme(legend.position="none"), fig.Reproductive.Vegetative.Lmer + theme(legend.position="none"), Plot.Inflorescence.Asexual.Lmer.Result, fig.log.Inflorescence.Asexual.Lmer + theme(legend.position="none"), fig.Inflorescence.Asexual.Lmer + theme(legend.position="none"), ncol=3, nrow=3, labels=c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'), font.label=list(size=10, color="black", face="bold"), widths=c(1.6,0.9,0.9), common.legend=FALSE), cowplot::get_legend(fig.log.TotalAbove.TotalBelow.Lmer + guides(colour=guide_legend(nrow=1, ncol=4, byrow=TRUE), fill=guide_legend(nrow=1, ncol=4, byrow=TRUE)) + theme(legend.position="bottom", legend.box="horizontal", legend.margin=margin(2,0,2,0,"pt"), legend.key.width=unit(10,"pt"), legend.key.height=unit(10,"pt"), legend.text=element_text(size=8), legend.title=element_text(size=8))), ncol=1, heights=c(1,0.08))
 
-#ggsave('Result/fig.allometry.TotalBiomass.pdf',width = 18,height =15,units = c('cm'))
+#Figure S5
+
+#ggsave('Result/fig.allometry.TotalBiomass20250916.pdf',width = 18,height =18,units = c('cm'))
 
 
 
@@ -1429,7 +1509,7 @@ corrplot::corrplot(M,add = TRUE, type = "lower", method = "number",number.font =
                    addrect = 2,hclust.method="ward.D2",
                    diag = F,tl.pos = "n", cl.pos = "n",cl.cex =1)
 #save by hand ,Soil.CorPlot.pdf
-#Figure S6
+#Figure S1
 
 
 
@@ -1561,9 +1641,9 @@ Plot.Allometry.Soil<-Plot.Allometry.Soil+labs(x ="")+labs(y ="Effect size")+
 Plot.Allometry.Soil<-Plot.Allometry.Soil+coord_flip()#+
 
 
-Plot.Allometry.Soil
+Plot.Allometry.Soil#Figure S3
 
-#ggsave('Result/Plot.Allometry.Soil20250113.pdf', width =10, height =5, units = 'cm')#Figure S4
+#ggsave('Result/Plot.Allometry.Soil20250113.pdf', width =10, height =5, units = 'cm')
 
 
 
@@ -1705,4 +1785,4 @@ fig.day <- ggpubr::ggarrange(
 )
 
 fig.day
-#ggsave('Result/fig.day.pdf',width = 15,height =6,units = c('cm'))#Figure S5 
+#ggsave('Result/fig.day.pdf',width = 15,height =6,units = c('cm'))#Figure S4
